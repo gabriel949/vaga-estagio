@@ -4,12 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jasmine JASMINE_CONFIG_PATH=./jasmine.json",
     "start": "node main.js"
   },
-  "author": "Matheus Godinho <matheus@melhorplano.net>",
+  "author": "Gabriel Victor",
   "license": "MIT",
   "dependencies": {
-    "cheerio": "^1.0.0-rc.2"
+    "cheerio": "^1.0.0-rc.2",
+    "jsonfile": "^4.0.0"
+  },
+  "devDependencies": {
+    "jasmine": "^2.8.0"
   }
 }

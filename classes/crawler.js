@@ -1,17 +1,20 @@
 "use strict";
+/**
+ * Dev-Dependencies
+ */
+const fs = require('fs');
+const path = require('path');
+const cheerio = require('cheerio');
+const jsonfile = require('jsonfile');
 
-const fs = require('fs')
-const path = require('path')
-const cheerio = require('cheerio')
 
-module.exports = class Crawler {
+class Crawler {
+
     constructor() {
-        const html = this.retrieveHtml()
-        const $ = this.parseHtmlToCheerio(html)
-    
-        const parsedPlan = this.parsePlan($)
-        
-        return parsedPlan
+        this.html = this.retrieveHtml()
+        this.$ = this.parseHtmlToCheerio(this.html)
+        this.parsedPlan = this.parsePlan(this.$)
+        this.benefits = this.parsePlanBenefits(this.$)
     }
 
     /**
@@ -43,8 +46,8 @@ module.exports = class Crawler {
      * @return json formatted plan
      */
     parsePlan($) {
-        const planInformationParsed = this.parsePlanInformation($)
-        const planBenefitsParsed = this.parsePlanBenefits($)
+        const planInformationParsed = this.parsePlanInformation(this.$)
+        const planBenefitsParsed = this.parsePlanBenefits(this.$)
 
         return {
             ...planInformationParsed,
@@ -59,16 +62,18 @@ module.exports = class Crawler {
      * @return formatted JSON
      */
     parsePlanInformation($) {
-        $('.notMobile').find('ul').first().each((i, element) => {
-            const item = $(element).text().trim()
-        })
-
-        // TODO: Fill this object with the parsed data
-        return {
-           plan_name: '',
-           internet: '',
-           minutes: '',
+        let plan = {
         }
+
+        $('.notMobile').find('ul').first().each((i, element) => {
+            let item = $(element).text().trim()
+            plan.Internet = /[0-9]+GB/ig.exec(item)[0]
+            plan.Minutes = /ilimitado/ig.test(item) ? -1 : /[0-9]+minutos/ig.exec(item)[0]
+        })
+        plan.Price = $('#planPrice').val();
+        plan.Name = $('title').text();
+
+        return plan;
     }
 
     /**
@@ -78,11 +83,30 @@ module.exports = class Crawler {
      * @return array with all benefits
      */
     parsePlanBenefits($) {
+
+        let benefits = [];
+
         $('.notMobile').find('ul').last().each((i, element) => {
-            const item = $(element).text().trim()
+            const item = $(element).children().each((i, li) => {
+                benefits = [$(li).text(), ...benefits];
+            });
         })
 
-        // TODO: Fill this with the benefits parsed
-        return []
+        return benefits
     }
+
+    /**
+     * Generate a json file with the plan information at the root folder
+     */
+    saveExtractedInfo(){
+        let plan = this.parsedPlan;
+        plan.benefits = this.benefits;
+        jsonfile.writeFile(`./plan_information.json`, plan, function (err){
+            if(err)
+                console.error('Error in sasving file: ', err);
+        });
+    }
+
 }
+
+module.exports = Crawler;
